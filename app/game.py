@@ -1,73 +1,108 @@
+from app.grid import Grid
 from app.player import Player
-from app.game_service import GameService
+
 
 class Game:
-    def __init__(self):
-        self.players = []
-        self.number_of_players = 0
-        self.pieces = ["X", "O", "*", "="]
-        self.game_service = None
-        self.current_player = None
+    def __init__(self, players: list[Player], grid: Grid):
+        self.players = players
+        self.grid = grid
+        self.current_player = players[0]
+        self.winner = None
+        self.is_over = False
+        self.moves = 0
 
-    def start_game(self):
-        self._create_players()
-        self._create_grid()
-        self._play_game()
+    def play(self, column):
+        piece = self.current_player.piece
 
-    def _set_number_of_players(self) -> None:
-        try:
-            number_of_players = int(input("Number of players: 2-4 \n"))
-        except ValueError:
-            number_of_players = 2
-        if not number_of_players <= 4:
-            number_of_players = 2
-        return number_of_players
+        if not self._is_legal_move(column):
+            return "Illegal Move"
 
-    def _create_players(self):
-        self.number_of_players = self._set_number_of_players()
-        for n in range(1, self.number_of_players + 1):
-            username = input(f"Player{n} please choose a username: ")
-            if len(username) < 1:
-                print("The game will chose a username for you!")
-                username = f"Player{n}"
-            piece = self.pieces[n - 1]
-            self.players.append(Player(username, piece))
+        row = self._find_lowest_row(column)
+        self.grid.set_cell(row, column, piece)
 
-    def _create_grid(self):
-        rows = columns = 5
-        try:
-            rows = int(input("Player1 must choose board dimensions, first the number of rows: "))
-            columns = int(input(("Then columns: ")))
-        except ValueError:
-            pass
+        self.moves += 1
 
-        self.game_service = GameService(rows, columns)
+        if self._check_win(row, column, piece):
+            self.winner = self.current_player
+            self.is_over = True
+            return piece
 
-    def _play_game(self):
-        self.current_player = self.players[0]
-        current_player_index = 0
+        if self.moves == self.grid.rows * self.grid.columns:
+            self.is_over = True
 
-        round_number = 1
+        self._next_player()
+
+    def _next_player(self):
+        current_player_index = self.players.index(self.current_player)
+        next_player_index = (current_player_index + 1) % len(self.players)
+
+        self.current_player = self.players[next_player_index]
+
+    def _is_legal_move(self, column: int) -> bool:
+        return (
+            self._validate_column(column)
+            and self._validate_column_not_full(column)
+        )
+
+    def _validate_column(self, column: int) -> bool:
+        return 0 < column <= self.grid.columns
+
+    def _validate_column_not_full(self, column: int) -> bool:
+        return self.grid.get_cell(1, column) is None
+
+    def _find_lowest_row(self, column: int) -> int | None:
+        for row in range(self.grid.rows, 0, -1):
+            if self.grid.get_cell(row, column) is None:
+                return row
+
+        return None
+
+    def _check_win(self, row: int, column: int, piece: str):
+        return (
+            self._vertical_check(row, column, piece)
+            or self._horizontal_check(row, column, piece)
+            or self._diagonal_check(row, column, piece)
+        )
+
+    def _vertical_check(self, row, column, piece):
+        count = 1
+        count += self._count_direction(row, column, piece, 1, 0)
+        count += self._count_direction(row, column, piece, -1, 0)
+
+        return piece if count >= 4 else None
+
+    def _horizontal_check(self, row, column, piece):
+        count = 1
+        count += self._count_direction(row, column, piece, 0, 1)
+        count += self._count_direction(row, column, piece, 0, -1)
+
+        return piece if count >= 4 else None
+
+    def _diagonal_check(self, row, column, piece):
+        count = 1
+        count += self._count_direction(row, column, piece, 1, 1)
+        count += self._count_direction(row, column, piece, -1, -1)
+
+        if count >= 4:
+            return piece
+
+        count = 1
+        count += self._count_direction(row, column, piece, -1, 1)
+        count += self._count_direction(row, column, piece, 1, -1)
+
+        if count >= 4:
+            return piece
+
+        return None
+
+    def _count_direction(self, row: int, column: int, piece: str, row_delta: int, column_delta: int):
+        count = 0
         while True:
-            result = self._play_turn(round_number)
-
-            if result == self.current_player.piece:
-                print(f"{self.current_player.username} wins!")
+            row += row_delta
+            column += column_delta
+            if not (1 <= row <= self.grid.rows and 1 <= column <= self.grid.columns):
                 break
-
-            round_number += 1
-            current_player_index = self._next_player(current_player_index)
-
-    def _play_turn(self, round_number: int):
-        column = 0
-        try:
-            column = int(input(f"{self.current_player.username}, choose a column where to place the piece: "))
-        except ValueError:
-            pass
-
-        return self.game_service.place_piece(column, self.current_player.piece, round_number, self.number_of_players)
-
-    def _next_player(self, current_player_index: int) -> int:
-        current_player_index = (current_player_index + 1) % len(self.players)
-        self.current_player = self.players[current_player_index]
-        return current_player_index
+            if self.grid.get_cell(row, column) != piece:
+                break
+            count += 1
+        return count

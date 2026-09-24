@@ -1,8 +1,8 @@
-from app.game import Game
+from app.console import Console
 
 def main():
-    game = Game()
-    game.start_game()
+    console = Console()
+    console.start()
 
 
 if __name__ == "__main__":

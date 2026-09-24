@@ -17,7 +17,7 @@ class GameService:
         return None
 
     def _validate_column_not_full(self, column: int) -> bool:
-        return self._find_lowest_row(column) is not None
+        return self.grid.get_cell(1, column) is None
 
     def place_piece(self, column: int, piece: str):
         if not self._is_legal_move(column):

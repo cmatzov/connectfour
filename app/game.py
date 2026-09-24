@@ -15,6 +15,7 @@ class Game:
         piece = self.current_player.piece
 
         if not self._is_legal_move(column):
+            self._next_player()
             return "Illegal Move"
 
         row = self._find_lowest_row(column)

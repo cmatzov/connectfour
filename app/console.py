@@ -47,8 +47,8 @@ class Console:
         while not game.is_over:
             self._play_turn(game)
 
-        if self.winner:
-            print(f"{self.winner.username} wins!")
+        if game.winner:
+            print(f"{game.winner.username} wins!")
         else:
             print("Game ended in a Draw")
 

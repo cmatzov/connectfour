@@ -19,7 +19,7 @@ class GameService:
     def _validate_column_not_full(self, column: int) -> bool:
         return self.grid.get_cell(1, column) is None
 
-    def place_piece(self, column: int, piece: str):
+    def place_piece(self, column: int, piece: str, round: int, players_count: int) -> str | None:
         if not self._is_legal_move(column):
             return "Illegal Move"
 
@@ -27,7 +27,8 @@ class GameService:
 
         self.grid.set_cell(row, column, piece)
 
-        return self._check_win(row, column, piece)
+        if round >= players_count * 3:
+            return self._check_win(row, column, piece)
 
     def _check_win(self, row: int, column: int, piece: str):
         return (

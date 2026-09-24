@@ -4,6 +4,7 @@ from app.game_service import GameService
 class Game:
     def __init__(self):
         self.players = []
+        self.number_of_players = 0
         self.pieces = ["X", "O", "*", "="]
         self.game_service = None
         self.current_player = None
@@ -23,7 +24,8 @@ class Game:
         return number_of_players
 
     def _create_players(self):
-        for n in range(1, self._set_number_of_players() + 1):
+        self.number_of_players = self._set_number_of_players()
+        for n in range(1, self.number_of_players + 1):
             username = input(f"Player{n} please choose a username: ")
             if len(username) < 1:
                 print("The game will chose a username for you!")
@@ -45,23 +47,25 @@ class Game:
         self.current_player = self.players[0]
         current_player_index = 0
 
+        round_number = 1
         while True:
-            result = self._play_turn()
+            result = self._play_turn(round_number)
 
             if result == self.current_player.piece:
                 print(f"{self.current_player.username} wins!")
                 break
-                
+
+            round_number += 1
             current_player_index = self._next_player(current_player_index)
 
-    def _play_turn(self):
+    def _play_turn(self, round_number: int):
         column = 0
         try:
             column = int(input(f"{self.current_player.username}, choose a column where to place the piece: "))
         except ValueError:
             pass
 
-        return self.game_service.place_piece(column, self.current_player.piece)
+        return self.game_service.place_piece(column, self.current_player.piece, round_number, self.number_of_players)
 
     def _next_player(self, current_player_index: int) -> int:
         current_player_index = (current_player_index + 1) % len(self.players)
